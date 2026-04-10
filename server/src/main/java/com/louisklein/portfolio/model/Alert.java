@@ -32,6 +32,24 @@ public class Alert {
     @JoinColumn(name = "asset_id", nullable = false)
     private Asset asset;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "condition", nullable = false, length = 10)
+    private AlertCondition condition;
+
+    @Column(name = "threshold", nullable = false, precision = 18, scale = 8)
+    private BigDecimal threshold;
+
     @Column(name = "is_active", nullable = false)
     private boolean active;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @Column(name = "last_triggered_at")
+    private OffsetDateTime lastTriggeredAt;
+
+    public enum AlertCondition {
+        ABOVE, BELOW
+    }
 }
