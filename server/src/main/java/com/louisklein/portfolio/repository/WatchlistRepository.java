@@ -11,5 +11,5 @@ import java.util.UUID;
 public interface WatchlistRepository extends JpaRepository<Watchlist, UUID> {
 
     List<Watchlist> findByUserId(UUID userId);
-    boolean existsByUserIdAndName(String userId, String name);
+    boolean existsByUserIdAndName(UUID userId, String name);
 }
