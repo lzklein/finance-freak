@@ -1,5 +1,6 @@
 package com.louisklein.portfolio.service;
 
+import com.louisklein.portfolio.exception.ResourceNotFoundException;
 import com.louisklein.portfolio.model.User;
 import com.louisklein.portfolio.repository.UserRepository;
 import com.louisklein.portfolio.security.JwtUtils;
@@ -50,5 +51,10 @@ public class AuthService {
 
     public Result<User> register(String email, String username, String displayName, String rawPassword) {
         return userService.createUser(email, username, displayName, rawPassword);
+    }
+
+    public User getUser(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 }
