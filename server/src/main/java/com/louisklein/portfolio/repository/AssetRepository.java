@@ -21,6 +21,8 @@ public interface AssetRepository extends JpaRepository<Asset, UUID> {
 
     List<Asset> findByAssetType(Asset.AssetType assetType);
 
+    List<Asset> findByNameContaining(String name);
+
     @Query("SELECT a FROM Asset a JOIN FETCH a.priceCache WHERE a.id = :id")
     Optional<Asset> findByIdWithPrice(@Param("id") UUID id);
 }
