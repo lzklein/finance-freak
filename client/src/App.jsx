@@ -10,6 +10,7 @@ import Home from './components/Home';
 import Inbox from './components/Inbox';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
+import Confirmation from './components/Confirmation';
 import Login from './components/Login';
 
 function App() {
