@@ -12,6 +12,7 @@ import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import Confirmation from './components/Confirmation';
 import Login from './components/Login';
+import Search from './components/Search';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/search" element={<Search />} />
             <Route path="/register" element={<Register />} />
             <Route path="/confirmation" element={<Confirmation />} />
             <Route path="/dashboard" element={<Dashboard />} />
