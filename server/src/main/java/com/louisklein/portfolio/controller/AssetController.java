@@ -114,4 +114,10 @@ public class AssetController {
 
         return response;
     }
+
+    @GetMapping("/search/alpaca")
+    public ResponseEntity<List<AssetResponse>> searchAlpaca(@RequestParam String query) {
+        List<Asset> results = assetService.searchFromAlpaca(query);
+        return ResponseEntity.ok(results.stream().map(this::toResponse).toList());
+    }
 }
