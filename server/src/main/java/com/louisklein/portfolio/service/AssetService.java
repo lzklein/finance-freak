@@ -1,5 +1,6 @@
 package com.louisklein.portfolio.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.louisklein.portfolio.exception.ResourceNotFoundException;
 import com.louisklein.portfolio.model.Asset;
 import com.louisklein.portfolio.repository.AssetRepository;
@@ -7,6 +8,7 @@ import com.louisklein.portfolio.repository.PriceCacheRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +19,7 @@ public class AssetService {
 
     private final AssetRepository assetRepository;
     private final PriceCacheRepository priceCacheRepository;
+    private final AlpacaClient alpacaClient;
 
     public List<Asset> findAll() {
         return assetRepository.findAll();
@@ -106,5 +109,37 @@ public class AssetService {
 
         assetRepository.deleteById(id);
         return result;
+    }
+
+    public List<Asset> searchFromAlpaca(String query) {
+        JsonNode response = alpacaClient.searchAssets(query);
+        List<Asset> results = new ArrayList<>();
+
+        if (response == null || !response.isArray()) return results;
+
+        for (JsonNode node : response) {
+            String symbol = node.path("symbol").asText();
+            String name = node.path("name").asText();
+            String assetClass = node.path("class").asText();
+
+            Asset.AssetType type = assetClass.equals("crypto")
+                    ? Asset.AssetType.CRYPTO
+                    : Asset.AssetType.STOCK;
+
+            // return existing asset if already in DB
+            Optional<Asset> existing = assetRepository.findBySymbol(symbol);
+            if (existing.isPresent()) {
+                results.add(existing.get());
+            } else {
+                Asset asset = Asset.builder()
+                        .symbol(symbol)
+                        .name(name)
+                        .assetType(type)
+                        .build();
+                results.add(asset);
+            }
+        }
+
+        return results;
     }
 }
