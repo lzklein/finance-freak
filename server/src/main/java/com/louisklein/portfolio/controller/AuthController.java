@@ -25,7 +25,6 @@ public class AuthController {
         Result<User> result = authService.register(
                 request.getEmail(),
                 request.getUsername(),
-                request.getDisplayName(),
                 request.getPassword()
         );
 

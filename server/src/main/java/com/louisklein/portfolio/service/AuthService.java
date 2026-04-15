@@ -49,8 +49,8 @@ public class AuthService {
         return result;
     }
 
-    public Result<User> register(String email, String username, String displayName, String rawPassword) {
-        return userService.createUser(email, username, displayName, rawPassword);
+    public Result<User> register(String email, String username, String rawPassword) {
+        return userService.createUser(email, username, rawPassword);
     }
 
     public User getUser(String email) {

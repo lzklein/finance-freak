@@ -26,7 +26,7 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
-    public Result<User> createUser(String email, String username, String displayName, String rawPassword) {
+    public Result<User> createUser(String email, String username, String rawPassword) {
         Result<User> result = validateCredentials(email, username, rawPassword);
 
         if (!result.isSuccess()) {
@@ -46,7 +46,6 @@ public class UserService {
         User user = User.builder()
                 .email(email.trim().toLowerCase())
                 .username(username.trim())
-                .displayName(displayName)
                 .passwordHash(passwordEncoder.encode(rawPassword))
                 .build();
 
