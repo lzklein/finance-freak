@@ -36,7 +36,7 @@ const Navbar = () => {
             name="search"
             type="text"
             placeholder="Search stocks or crypto..."
-            className="w-full px-4 py-2 rounded bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 rounded bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </form>
       )}
@@ -47,7 +47,7 @@ const Navbar = () => {
             <div className="relative">
               <button 
                 onClick={() => setShowNotifications(!showNotifications)} 
-                className="hover:text-blue-400 text-xl">
+                className="hover:text-green-400 text-xl">
                 🔔
               </button>
               {showNotifications && (
@@ -56,13 +56,13 @@ const Navbar = () => {
                 </div>
               )}
             </div>
-            <NavLink to="/dashboard" className="hover:text-blue-400">Dashboard</NavLink>
+            <NavLink to="/dashboard" className="hover:text-green-400">Dashboard</NavLink>
             <button onClick={handleLogout} className="hover:text-red-400">Logout</button>
           </>
         ) : (
           <>
-            <button onClick={handleLogin}  className="hover:text-blue-400">Login</button>
-            <NavLink to="/register" className="hover:text-blue-400">Register</NavLink>
+            <button onClick={handleLogin}  className="hover:text-green-400">Login</button>
+            <NavLink to="/register" className="hover:text-green-400">Register</NavLink>
           </>
         )}
       </div>
