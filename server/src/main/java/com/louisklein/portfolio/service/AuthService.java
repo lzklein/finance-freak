@@ -11,6 +11,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,11 +22,11 @@ public class AuthService {
     private final UserService userService;
     private final JwtUtils jwtUtils;
 
-    public Result<String> login(String email, String password) {
+    public Result<String> login(String input, String password) {
         Result<String> result = new Result<>();
 
-        if (UserService.isNullOrBlank(email)) {
-            result.addMessage("Email is required", ResultType.INVALID);
+        if (UserService.isNullOrBlank(input)) {
+            result.addMessage("Email/Username is required", ResultType.INVALID);
         }
         if (UserService.isNullOrBlank(password)) {
             result.addMessage("Password is required", ResultType.INVALID);
@@ -34,17 +35,24 @@ public class AuthService {
             return result;
         }
 
+        String normalized = input.trim().toLowerCase();
+
+        User user = userRepository.findByEmailOrUsername(normalized)
+                .orElse(null);
+
+        if (user == null) {
+            result.addMessage("Invalid email or password", ResultType.INVALID);
+            return result;
+        }
+
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(email.trim().toLowerCase(), password)
+                    new UsernamePasswordAuthenticationToken(user.getEmail(), password)
             );
         } catch (AuthenticationException e) {
             result.addMessage("Invalid email or password", ResultType.INVALID);
             return result;
         }
-
-        User user = userRepository.findByEmail(email.trim().toLowerCase())
-                .orElseThrow();
 
         String token = jwtUtils.generateToken(user.getEmail());
         result.setPayload(token);
@@ -63,23 +71,24 @@ public class AuthService {
     public Result<Void> verifyEmail(String token) {
         Result<Void> result = new Result<>();
 
-        User user = userRepository.findByVerificationToken(token)
-                .orElse(null);
+        Optional<User> userOpt = userRepository.findByVerificationToken(token);
 
-        if (user == null) {
+        if (userOpt.isEmpty()) {
             result.addMessage("Invalid verification token", ResultType.INVALID);
             return result;
         }
+
+        User user = userOpt.get();
 
         if (user.getVerificationTokenExpiresAt().isBefore(OffsetDateTime.now())) {
             result.addMessage("Verification token has expired", ResultType.INVALID);
             return result;
         }
+
         user.setVerified(true);
         user.setVerificationToken(null);
         user.setVerificationTokenExpiresAt(null);
         userRepository.save(user);
-
         return result;
     }
 }
