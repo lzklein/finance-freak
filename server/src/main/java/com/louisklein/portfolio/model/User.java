@@ -34,8 +34,14 @@ public class User {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    @Column(name = "display_name", length = 100)
-    private String displayName;
+    @Column(name = "is_verified", nullable = false)
+    private boolean verified;
+
+    @Column(name = "verification_token")
+    private String verificationToken;
+
+    @Column(name = "verification_token_expires_at")
+    private OffsetDateTime verificationTokenExpiresAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
