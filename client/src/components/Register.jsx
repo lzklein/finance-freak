@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { registerUser } from '../api';
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ const Register = () => {
     { label: "No whitespace", met: password.length > 0 && !/\s/.test(password) },
   ]
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== secondPassword) return;
     if (rules.some(r => !r.met)) return;
@@ -28,7 +29,19 @@ const Register = () => {
       password: password
     }
 
-    console.log(registerSubmission);
+    try {
+      const response = await registerUser(registerSubmission);
+      console.log(response);
+
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+        navigate('/confirmation');
+      } else {
+        console.log('Registration failed:', response);
+      }
+    } catch (err) {
+      console.error('Error:', err);
+    }
   }
 
   return (
