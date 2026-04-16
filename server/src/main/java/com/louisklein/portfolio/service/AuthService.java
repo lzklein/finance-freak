@@ -10,6 +10,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -54,7 +56,30 @@ public class AuthService {
     }
 
     public User getUser(String email) {
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmailOrUsername(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    public Result<Void> verifyEmail(String token) {
+        Result<Void> result = new Result<>();
+
+        User user = userRepository.findByVerificationToken(token)
+                .orElse(null);
+
+        if (user == null) {
+            result.addMessage("Invalid verification token", ResultType.INVALID);
+            return result;
+        }
+
+        if (user.getVerificationTokenExpiresAt().isBefore(OffsetDateTime.now())) {
+            result.addMessage("Verification token has expired", ResultType.INVALID);
+            return result;
+        }
+        user.setVerified(true);
+        user.setVerificationToken(null);
+        user.setVerificationTokenExpiresAt(null);
+        userRepository.save(user);
+
+        return result;
     }
 }
