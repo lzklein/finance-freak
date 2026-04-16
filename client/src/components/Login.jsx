@@ -11,7 +11,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const registerSubmission = {
-      email: email,
+      email: username,
       password: password
     }
 

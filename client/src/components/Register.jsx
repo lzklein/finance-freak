@@ -34,7 +34,6 @@ const Register = () => {
       console.log(response);
 
       if (response.token) {
-        localStorage.setItem('token', response.token);
         navigate('/confirmation');
       } else {
         console.log('Registration failed:', response);
