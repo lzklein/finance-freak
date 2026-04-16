@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Service
@@ -15,6 +16,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public User findById(UUID id) {
         return userRepository.findById(id)
@@ -47,9 +49,13 @@ public class UserService {
                 .email(email.trim().toLowerCase())
                 .username(username.trim())
                 .passwordHash(passwordEncoder.encode(rawPassword))
+                .verified(false)
+                .verificationToken(UUID.randomUUID().toString())
+                .verificationTokenExpiresAt(OffsetDateTime.now().plusHours(24))
                 .build();
 
         result.setPayload(userRepository.save(user));
+        emailService.sendVerificationEmail(email.trim().toLowerCase(), user.getVerificationToken());
         return result;
     }
 

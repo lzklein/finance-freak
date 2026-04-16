@@ -58,7 +58,6 @@ public class UserController {
         response.setId(user.getId());
         response.setEmail(user.getEmail());
         response.setUsername(user.getUsername());
-        response.setDisplayName(user.getDisplayName());
         response.setCreatedAt(user.getCreatedAt());
         return response;
     }
