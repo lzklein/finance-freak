@@ -61,7 +61,7 @@ const Navbar = () => {
           </>
         ) : (
           <>
-            <button onClick={handleLogin}  className="hover:text-green-400">Login</button>
+            <NavLink to="/login" className="hover:text-green-400">Login</NavLink>
             <NavLink to="/register" className="hover:text-green-400">Register</NavLink>
           </>
         )}
