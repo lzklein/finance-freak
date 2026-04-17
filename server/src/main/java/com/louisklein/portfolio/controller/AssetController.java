@@ -1,10 +1,12 @@
 package com.louisklein.portfolio.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.louisklein.portfolio.dto.AssetRequest;
 import com.louisklein.portfolio.dto.AssetResponse;
 import com.louisklein.portfolio.model.Asset;
 import com.louisklein.portfolio.model.PriceCache;
 import com.louisklein.portfolio.repository.PriceCacheRepository;
+import com.louisklein.portfolio.service.AlpacaClient;
 import com.louisklein.portfolio.service.AssetService;
 import com.louisklein.portfolio.service.Result;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class AssetController {
 
     private final AssetService assetService;
     private final PriceCacheRepository priceCacheRepository;
+    private final AlpacaClient alpacaClient;
 
     @GetMapping
     public ResponseEntity<List<AssetResponse>> getAllAssets() {
@@ -119,5 +122,11 @@ public class AssetController {
     public ResponseEntity<List<AssetResponse>> searchAlpaca(@RequestParam String query) {
         List<Asset> results = assetService.searchFromAlpaca(query);
         return ResponseEntity.ok(results.stream().map(this::toResponse).toList());
+    }
+
+    @GetMapping("/test-alpaca")
+    public ResponseEntity<?> testAlpaca() {
+        JsonNode result = alpacaClient.getLatestPrice("AAPL");
+        return ResponseEntity.ok(result);
     }
 }
