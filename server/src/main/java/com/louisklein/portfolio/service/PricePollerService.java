@@ -26,64 +26,68 @@ public class PricePollerService {
     private final PriceCacheRepository priceCacheRepository;
     private final AlertRepository alertRepository;
     private final AlertService alertService;
-    private final AlpacaClient alpacaClient;
+    private final SteamMarketClient steamMarketClient;
 
     @Scheduled(fixedRate = 300000)
     public void pollPrices() {
         log.info("Starting price poll...");
-        List<Asset> assets = assetRepository.findAll();
 
-        for (Asset asset : assets) {
+        List<Asset> cs2Assets = assetRepository.findByAssetType(Asset.AssetType.CS2_SKIN);
+
+        for (Asset asset : cs2Assets) {
             try {
-                BigDecimal price = fetchPrice(asset);
-                if (price == null) continue;
-
-                upsertPriceCache(asset, price);
-                checkAlerts(asset, price);
-
+                pollSteamPrice(asset);
             } catch (Exception e) {
-                log.error("Failed to poll price for {}: {}", asset.getSymbol(), e.getMessage());
+                log.error("Failed to poll price for {}: {}", asset.getName(), e.getMessage());
             }
         }
 
         log.info("Price poll complete.");
     }
 
-    private BigDecimal fetchPrice(Asset asset) {
-        try {
-            if (asset.getAssetType() == Asset.AssetType.CRYPTO) {
-                JsonNode response = alpacaClient.getLatestCryptoPrice(asset.getSymbol());
-                JsonNode quote = response.path("quotes").path(asset.getSymbol());
-                String askPrice = quote.path("ap").asText();
-                return new BigDecimal(askPrice);
-            } else {
-                JsonNode response = alpacaClient.getLatestPrice(asset.getSymbol());
-                JsonNode quote = response.path("quote");
-                String askPrice = quote.path("ap").asText();
-                return new BigDecimal(askPrice);
-            }
-        } catch (Exception e) {
-            log.warn("Could not fetch price for {}: {}", asset.getSymbol(), e.getMessage());
-            return null;
+    private void pollSteamPrice(Asset asset) {
+        JsonNode response = steamMarketClient.getPriceOverview(asset.getName());
+
+        if (response == null || !response.path("success").asBoolean()) {
+            log.warn("No price data for {}", asset.getName());
+            return;
         }
+
+        BigDecimal lowestAsk = steamMarketClient.parsePrice(
+                response.path("lowest_price").asText(null));
+        BigDecimal lastSale = steamMarketClient.parsePrice(
+                response.path("median_price").asText(null));
+        Integer volume = steamMarketClient.parseVolume(
+                response.path("volume").asText(null));
+
+        upsertPriceCache(asset, lowestAsk, lastSale, volume);
+        checkAlerts(asset, lowestAsk);
     }
 
-    private void upsertPriceCache(Asset asset, BigDecimal price) {
-        Optional<PriceCache> existing = priceCacheRepository.findByAssetId(asset.getId());
+    private void upsertPriceCache(Asset asset, BigDecimal lowestAsk,
+                                  BigDecimal lastSale, Integer volume) {
+        Optional<PriceCache> existing = priceCacheRepository
+                .findByAssetIdAndMarketplace(asset.getId(), PriceCache.Marketplace.STEAM);
 
         PriceCache priceCache = existing.orElse(PriceCache.builder()
                 .asset(asset)
+                .marketplace(PriceCache.Marketplace.STEAM)
                 .build());
 
-        priceCache.setPrice(price);
+        priceCache.setLowestAsk(lowestAsk);
+        priceCache.setLastSale(lastSale);
+        priceCache.setVolume24h(volume);
         priceCache.setFetchedAt(OffsetDateTime.now());
         priceCacheRepository.save(priceCache);
     }
 
     private void checkAlerts(Asset asset, BigDecimal currentPrice) {
+        if (currentPrice == null) return;
+
         List<Alert> activeAlerts = alertRepository.findByAssetId(asset.getId())
                 .stream()
                 .filter(Alert::isActive)
+                .filter(a -> a.getMarketplace() == PriceCache.Marketplace.STEAM)
                 .toList();
 
         for (Alert alert : activeAlerts) {
@@ -99,7 +103,7 @@ public class PricePollerService {
 
             if (triggered) {
                 log.info("Alert triggered for {} {} {}",
-                        alert.getAsset().getSymbol(),
+                        asset.getName(),
                         alert.getCondition(),
                         alert.getThreshold());
                 alertService.triggerAlert(alert, currentPrice);

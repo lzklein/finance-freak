@@ -5,8 +5,7 @@ import lombok.Data;
 
 @Data
 public class AssetRequest {
-    private String symbol;
     private String name;
     private Asset.AssetType assetType;
-    private String exchange;
+    private String imageUrl;
 }

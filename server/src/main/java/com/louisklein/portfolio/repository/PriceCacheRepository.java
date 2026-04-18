@@ -13,4 +13,7 @@ public interface PriceCacheRepository extends JpaRepository<PriceCache, UUID> {
 
     Optional<PriceCache> findByAssetId(UUID assetId);
     boolean existsByAssetId(UUID assetId);
+
+    Optional<PriceCache> findByAssetIdAndMarketplace(UUID assetId, PriceCache.Marketplace marketplace);
+    List<PriceCache> findAllByAssetId(UUID assetId);
 }

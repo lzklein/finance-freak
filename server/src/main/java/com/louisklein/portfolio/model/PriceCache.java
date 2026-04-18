@@ -27,15 +27,26 @@ public class PriceCache {
     @JoinColumn(name = "asset_id", nullable = false)
     private Asset asset;
 
-    @Column(name = "price", nullable = false, precision = 18, scale = 8)
-    private BigDecimal price;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "marketplace", nullable = false, length = 20)
+    private Marketplace marketplace;
 
-    @Column(name = "change_pct_24h", precision = 8, scale = 4)
-    private BigDecimal changePct24h;
+    @Column(name = "lowest_ask", precision = 18, scale = 2)
+    private BigDecimal lowestAsk;
 
-    @Column(name = "volume")
-    private Long volume;
+    @Column(name = "highest_bid", precision = 18, scale = 2)
+    private BigDecimal highestBid;
+
+    @Column(name = "last_sale", precision = 18, scale = 2)
+    private BigDecimal lastSale;
+
+    @Column(name = "volume_24h")
+    private Integer volume24h;
 
     @Column(name = "fetched_at", nullable = false)
     private OffsetDateTime fetchedAt;
+
+    public enum Marketplace {
+        STEAM, SKINPORT, BUFF, CSFLOAT, SKINBARON, NASDAQ, NYSE, CRYPTO
+    }
 }

@@ -49,6 +49,18 @@ public class Alert {
     @Column(name = "last_triggered_at")
     private OffsetDateTime lastTriggeredAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "marketplace", length = 20)
+    private PriceCache.Marketplace marketplace;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "price_type", nullable = false, length = 10)
+    private PriceType priceType = PriceType.ASK;
+
+    public enum PriceType {
+        ASK, BID, LAST
+    }
+
     public enum AlertCondition {
         ABOVE, BELOW
     }

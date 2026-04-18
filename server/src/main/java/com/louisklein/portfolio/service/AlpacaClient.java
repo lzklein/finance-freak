@@ -49,7 +49,15 @@ public class AlpacaClient {
 
     public JsonNode searchAssets(String query) {
         return withAuth(webClient.get()
-                .uri("https://broker-api.alpaca.markets/v1/assets?search={query}", query))
+                .uri("https://paper-api.alpaca.markets/v2/assets?search={query}&asset_class=us_equity", query))
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .block();
+    }
+
+    public JsonNode searchCryptoAssets(String query) {
+        return withAuth(webClient.get()
+                .uri("https://paper-api.alpaca.markets/v2/assets?search={query}&asset_class=crypto", query))
                 .retrieve()
                 .bodyToMono(JsonNode.class)
                 .block();

@@ -23,27 +23,30 @@ public class Asset {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name = "symbol", nullable = false, unique = true, length = 20)
-    private String symbol;
-
-    @Column(name = "name", nullable = false, length = 255)
+    @Column(name = "name", nullable = false, unique = true, length = 255)
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "asset_type", nullable = false, length = 10)
+    @Column(name = "asset_type", nullable = false, length = 20)
     private AssetType assetType;
 
-    @Column(name = "exchange", length = 50)
-    private String exchange;
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
-    public enum AssetType {
-        STOCK, CRYPTO
-    }
+    @OneToOne(mappedBy = "asset", fetch = FetchType.LAZY)
+    private SkinDetails skinDetails;
 
     @OneToOne(mappedBy = "asset", fetch = FetchType.LAZY)
     private PriceCache priceCache;
+
+    public enum AssetType {
+        STOCK, CRYPTO, CS2_SKIN
+    }
+
+    @OneToOne(mappedBy = "asset", fetch = FetchType.LAZY)
+    private MarketDetails marketDetails;
 }

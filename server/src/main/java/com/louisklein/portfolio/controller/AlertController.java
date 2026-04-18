@@ -127,7 +127,6 @@ public class AlertController {
         AlertResponse response = new AlertResponse();
         response.setId(alert.getId());
         response.setAssetId(alert.getAsset().getId());
-        response.setAssetSymbol(alert.getAsset().getSymbol());
         response.setAssetName(alert.getAsset().getName());
         response.setCondition(alert.getCondition());
         response.setThreshold(alert.getThreshold());
@@ -141,7 +140,7 @@ public class AlertController {
         AlertHistoryResponse response = new AlertHistoryResponse();
         response.setId(history.getId());
         response.setAlertId(history.getAlert().getId());
-        response.setAssetSymbol(history.getAlert().getAsset().getSymbol());
+        response.setAssetName(history.getAlert().getAsset().getName());
         response.setTriggeredPrice(history.getTriggeredPrice());
         response.setTriggeredAt(history.getTriggeredAt());
         return response;

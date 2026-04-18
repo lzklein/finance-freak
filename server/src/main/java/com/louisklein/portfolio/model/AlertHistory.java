@@ -38,4 +38,8 @@ public class AlertHistory {
     @CreationTimestamp
     @Column(name = "triggered_at", nullable = false, updatable = false)
     private OffsetDateTime triggeredAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "marketplace", length = 20)
+    private PriceCache.Marketplace marketplace;
 }

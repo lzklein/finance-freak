@@ -13,8 +13,8 @@ import java.util.UUID;
 @Repository
 public interface AssetRepository extends JpaRepository<Asset, UUID> {
 
-    Optional<Asset> findBySymbol(String symbol);
-    boolean existsBySymbol(String symbol);
+    Optional<Asset> findByMarketDetailsSymbol(String symbol);
+    boolean existsByMarketDetailsSymbol(String symbol);
 
     Optional<Asset> findByName(String name);
     boolean existsByName(String name);

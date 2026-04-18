@@ -3,6 +3,7 @@ package com.louisklein.portfolio.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.louisklein.portfolio.dto.AssetRequest;
 import com.louisklein.portfolio.dto.AssetResponse;
+import com.louisklein.portfolio.dto.PriceResponse;
 import com.louisklein.portfolio.model.Asset;
 import com.louisklein.portfolio.model.PriceCache;
 import com.louisklein.portfolio.repository.PriceCacheRepository;
@@ -14,9 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/assets")
@@ -39,11 +38,11 @@ public class AssetController {
         return ResponseEntity.ok(toResponse(asset));
     }
 
-    @GetMapping("/symbol/{symbol}")
-    public ResponseEntity<AssetResponse> getAssetBySymbol(@PathVariable String symbol) {
-        Asset asset = assetService.findBySymbol(symbol);
-        return ResponseEntity.ok(toResponse(asset));
-    }
+//    @GetMapping("/symbol/{symbol}")
+//    public ResponseEntity<AssetResponse> getAssetBySymbol(@PathVariable String symbol) {
+//        Asset asset = assetService.findBySymbol(symbol);
+//        return ResponseEntity.ok(toResponse(asset));
+//    }
 
     @GetMapping("/search")
     public ResponseEntity<List<AssetResponse>> searchAssets(@RequestParam String name) {
@@ -60,10 +59,9 @@ public class AssetController {
     @PostMapping
     public ResponseEntity<?> createAsset(@RequestBody AssetRequest request) {
         Result<Asset> result = assetService.createAsset(
-                request.getSymbol(),
                 request.getName(),
                 request.getAssetType(),
-                request.getExchange()
+                request.getImageUrl()
         );
 
         if (!result.isSuccess()) {
@@ -78,7 +76,7 @@ public class AssetController {
     @PatchMapping("/{id}")
     public ResponseEntity<?> updateAsset(@PathVariable UUID id,
                                          @RequestBody AssetRequest request) {
-        Result<Asset> result = assetService.updateAsset(id, request.getName(), request.getExchange());
+        Result<Asset> result = assetService.updateAsset(id, request.getName(), request.getImageUrl());
 
         if (!result.isSuccess()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -103,26 +101,31 @@ public class AssetController {
     private AssetResponse toResponse(Asset asset) {
         AssetResponse response = new AssetResponse();
         response.setId(asset.getId());
-        response.setSymbol(asset.getSymbol());
         response.setName(asset.getName());
         response.setAssetType(asset.getAssetType());
-        response.setExchange(asset.getExchange());
+        response.setImageUrl(asset.getImageUrl());
         response.setCreatedAt(asset.getCreatedAt());
 
-        Optional<PriceCache> price = priceCacheRepository.findByAssetId(asset.getId());
-        price.ifPresent(p -> {
-            response.setCurrentPrice(p.getPrice());
-            response.setChangePct24h(p.getChangePct24h());
-        });
-
+        List<PriceCache> prices = priceCacheRepository.findAllByAssetId(asset.getId());
+        Map<String, PriceResponse> priceMap = new HashMap<>();
+        for (PriceCache pc : prices) {
+            PriceResponse pr = new PriceResponse();
+            pr.setLowestAsk(pc.getLowestAsk());
+            pr.setHighestBid(pc.getHighestBid());
+            pr.setLastSale(pc.getLastSale());
+            pr.setVolume24h(pc.getVolume24h());
+            pr.setFetchedAt(pc.getFetchedAt());
+            priceMap.put(pc.getMarketplace().name(), pr);
+        }
+        response.setPrices(priceMap);
         return response;
     }
-
-    @GetMapping("/search/alpaca")
-    public ResponseEntity<List<AssetResponse>> searchAlpaca(@RequestParam String query) {
-        List<Asset> results = assetService.searchFromAlpaca(query);
-        return ResponseEntity.ok(results.stream().map(this::toResponse).toList());
-    }
+//    @GetMapping("/search/alpaca")
+//    public ResponseEntity<List<AssetResponse>> searchAlpaca(@RequestParam String query) {
+//        System.out.println("Searching");
+//        List<Asset> results = assetService.searchFromAlpaca(query);
+//        return ResponseEntity.ok(results.stream().map(this::toResponse).toList());
+//    }
 
     @GetMapping("/test-alpaca")
     public ResponseEntity<?> testAlpaca() {

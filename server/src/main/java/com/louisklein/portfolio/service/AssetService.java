@@ -35,10 +35,7 @@ public class AssetService {
                 .orElseThrow(() -> new ResourceNotFoundException("Asset not found"));
     }
 
-    public Asset findBySymbol(String symbol) {
-        return assetRepository.findBySymbol(symbol.trim().toUpperCase())
-                .orElseThrow(() -> new ResourceNotFoundException("Asset not found: " + symbol));
-    }
+
 
     public List<Asset> findByName(String name) {
         return assetRepository.findByNameContaining(name.trim().toLowerCase());
@@ -48,41 +45,32 @@ public class AssetService {
         return assetRepository.findByAssetType(assetType);
     }
 
-    public Result<Asset> createAsset(String symbol, String name, Asset.AssetType assetType, String exchange) {
+    public Result<Asset> createAsset(String name, Asset.AssetType assetType, String imageUrl) {
         Result<Asset> result = new Result<>();
-
-        if (UserService.isNullOrBlank(symbol)) {
-            result.addMessage("Symbol is required", ResultType.INVALID);
-        } else if (symbol.length() > 20) {
-            result.addMessage("Symbol must be 20 characters or less", ResultType.INVALID);
-        } else if (assetRepository.existsBySymbol(symbol.trim().toUpperCase())) {
-            result.addMessage("Asset with symbol " + symbol + " already exists", ResultType.INVALID);
-        }
 
         if (UserService.isNullOrBlank(name)) {
             result.addMessage("Name is required", ResultType.INVALID);
+        } else if (assetRepository.existsByName(name.trim())) {
+            result.addMessage("Asset already exists", ResultType.INVALID);
         }
 
         if (assetType == null) {
             result.addMessage("Asset type is required", ResultType.INVALID);
         }
 
-        if (!result.isSuccess()) {
-            return result;
-        }
+        if (!result.isSuccess()) return result;
 
         Asset asset = Asset.builder()
-                .symbol(symbol.trim().toUpperCase())
                 .name(name.trim())
                 .assetType(assetType)
-                .exchange(exchange != null ? exchange.trim() : null)
+                .imageUrl(imageUrl)
                 .build();
 
         result.setPayload(assetRepository.save(asset));
         return result;
     }
 
-    public Result<Asset> updateAsset(UUID id, String name, String exchange) {
+    public Result<Asset> updateAsset(UUID id, String name, String imageUrl) {
         Result<Asset> result = new Result<>();
 
         if (UserService.isNullOrBlank(name)) {
@@ -94,7 +82,7 @@ public class AssetService {
                 .orElseThrow(() -> new ResourceNotFoundException("Asset not found"));
 
         asset.setName(name.trim());
-        asset.setExchange(exchange != null ? exchange.trim() : null);
+        asset.setImageUrl(imageUrl);
         result.setPayload(assetRepository.save(asset));
         return result;
     }
@@ -111,35 +99,29 @@ public class AssetService {
         return result;
     }
 
-    public List<Asset> searchFromAlpaca(String query) {
-        JsonNode response = alpacaClient.searchAssets(query);
-        List<Asset> results = new ArrayList<>();
+//    public List<Asset> searchFromAlpaca(String query) {
+//        List<Asset> results = new ArrayList<>();
+//
+//        System.out.println("Stocks");
+//        JsonNode stocks = alpacaClient.searchAssets(query);
+//        System.out.println("Crypto");
+//        JsonNode crypto = alpacaClient.searchCryptoAssets(query);
+//
+//        if (stocks != null && stocks.isArray()) {
+//            for (JsonNode node : stocks) {
+//                results.add(mapToAsset(node, Asset.AssetType.STOCK));
+//            }
+//        }
+//        System.out.println(results);
+//
+//        if (crypto != null && crypto.isArray()) {
+//            for (JsonNode node : crypto) {
+//                results.add(mapToAsset(node, Asset.AssetType.CRYPTO));
+//            }
+//        }
+//
+//        return results;
+//    }
 
-        if (response == null || !response.isArray()) return results;
-
-        for (JsonNode node : response) {
-            String symbol = node.path("symbol").asText();
-            String name = node.path("name").asText();
-            String assetClass = node.path("class").asText();
-
-            Asset.AssetType type = assetClass.equals("crypto")
-                    ? Asset.AssetType.CRYPTO
-                    : Asset.AssetType.STOCK;
-
-            // return existing asset if already in DB
-            Optional<Asset> existing = assetRepository.findBySymbol(symbol);
-            if (existing.isPresent()) {
-                results.add(existing.get());
-            } else {
-                Asset asset = Asset.builder()
-                        .symbol(symbol)
-                        .name(name)
-                        .assetType(type)
-                        .build();
-                results.add(asset);
-            }
-        }
-
-        return results;
-    }
+//  }
 }

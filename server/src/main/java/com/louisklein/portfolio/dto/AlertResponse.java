@@ -10,7 +10,6 @@ import java.util.UUID;
 public class AlertResponse {
     private UUID id;
     private UUID assetId;
-    private String assetSymbol;
     private String assetName;
     private Alert.AlertCondition condition;
     private BigDecimal threshold;
