@@ -13,6 +13,7 @@ public class AssetResponse {
     private String name;
     private Asset.AssetType assetType;
     private String imageUrl;
+    private String weaponType;
     private Map<String, PriceResponse> prices;
     private OffsetDateTime createdAt;
 }
