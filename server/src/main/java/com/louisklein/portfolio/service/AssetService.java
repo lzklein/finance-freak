@@ -8,10 +8,7 @@ import com.louisklein.portfolio.repository.PriceCacheRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +17,7 @@ public class AssetService {
     private final AssetRepository assetRepository;
     private final PriceCacheRepository priceCacheRepository;
     private final AlpacaClient alpacaClient;
+    private final SteamMarketClient steamMarketClient;
 
     public List<Asset> findAll() {
         return assetRepository.findAll();
@@ -97,6 +95,39 @@ public class AssetService {
 
         assetRepository.deleteById(id);
         return result;
+    }
+
+    public Map<String, Object> searchFromSteam(String query, int page) {
+        int count = 20;
+        int start = page * count;
+
+        JsonNode response = steamMarketClient.searchItems(query, start, count);
+        List<Asset> results = new ArrayList<>();
+
+        if (response == null || !response.path("success").asBoolean()) {
+            return Map.of("results", results, "totalCount", 0);
+        }
+
+        int totalCount = response.path("total_count").asInt();
+        JsonNode items = response.path("results");
+        if (!items.isArray()) return Map.of("results", results, "totalCount", 0);
+
+        for (JsonNode item : items) {
+            String name = item.path("name").asText();
+            String imageUrl = "https://community.akamai.steamstatic.com/economy/image/"
+                    + item.path("asset_description").path("icon_url").asText();
+
+            Optional<Asset> existing = assetRepository.findByName(name);
+            Asset asset = existing.orElse(Asset.builder()
+                    .name(name)
+                    .assetType(Asset.AssetType.CS2_SKIN)
+                    .imageUrl(imageUrl)
+                    .build());
+
+            results.add(asset);
+        }
+
+        return Map.of("results", results, "totalCount", totalCount);
     }
 
 //    public List<Asset> searchFromAlpaca(String query) {
