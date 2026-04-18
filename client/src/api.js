@@ -2,10 +2,13 @@ const BASE_URL = 'http://localhost:8080/api';
 
 const getToken = () => localStorage.getItem('token');
 
-const headers = () => ({
-  'Content-Type': 'application/json',
-  ...(getToken() && { 'Authorization': `Bearer ${getToken()}` })
-});
+const headers = () => {
+  const token = getToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
 
 // AUTH
 export const registerUser = (data) =>
@@ -81,8 +84,13 @@ export const removeAssetFromWatchlist = (watchlistId, assetId) =>
   });
 
 // ASSETS
-export const searchAssets = (query) =>
-  fetch(`${BASE_URL}/assets/search?name=${query}`, {
+export const searchAssets = (query, page = 0) =>
+  fetch(`${BASE_URL}/assets/search/steam?query=${query}&page=${page}`, {
+    headers: headers()
+  }).then(res => res.json());
+
+export const getSteamPrice = (name) =>
+  fetch(`${BASE_URL}/assets/price/steam?name=${encodeURIComponent(name)}`, {
     headers: headers()
   }).then(res => res.json());
 
