@@ -10,6 +10,7 @@ import com.louisklein.portfolio.repository.PriceCacheRepository;
 import com.louisklein.portfolio.service.AlpacaClient;
 import com.louisklein.portfolio.service.AssetService;
 import com.louisklein.portfolio.service.Result;
+import com.louisklein.portfolio.service.SteamMarketClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ public class AssetController {
     private final AssetService assetService;
     private final PriceCacheRepository priceCacheRepository;
     private final AlpacaClient alpacaClient;
+    private final SteamMarketClient steamMarketClient;
 
     @GetMapping
     public ResponseEntity<List<AssetResponse>> getAllAssets() {
@@ -131,5 +133,38 @@ public class AssetController {
     public ResponseEntity<?> testAlpaca() {
         JsonNode result = alpacaClient.getLatestPrice("AAPL");
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/search/steam")
+    public ResponseEntity<?> searchSteam(@RequestParam String query,
+                                         @RequestParam(defaultValue = "0") int page) {
+        Map<String, Object> searchResult = assetService.searchFromSteam(query, page);
+        List<Asset> assets = (List<Asset>) searchResult.get("results");
+        int totalCount = (int) searchResult.get("totalCount");
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("results", assets.stream().map(this::toResponse).toList());
+        response.put("totalCount", totalCount);
+        response.put("page", page);
+        response.put("totalPages", (int) Math.ceil((double) totalCount / 20));
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/price/steam")
+    public ResponseEntity<?> getSteamPrice(@RequestParam String name) {
+        try {
+            JsonNode priceData = steamMarketClient.getPriceOverview(name);
+            if (priceData == null || !priceData.path("success").asBoolean()) {
+                return ResponseEntity.ok(Map.of("lowestAsk", (Object) null, "lastSale", (Object) null, "volume", (Object) null));
+            }
+            return ResponseEntity.ok(Map.of(
+                    "lowestAsk", steamMarketClient.parsePrice(priceData.path("lowest_price").asText(null)),
+                    "lastSale", steamMarketClient.parsePrice(priceData.path("median_price").asText(null)),
+                    "volume", steamMarketClient.parseVolume(priceData.path("volume").asText(null))
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("lowestAsk", (Object) null, "lastSale", (Object) null, "volume", (Object) null));
+        }
     }
 }
