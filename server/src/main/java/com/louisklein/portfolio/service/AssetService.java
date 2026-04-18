@@ -116,9 +116,10 @@ public class AssetService {
             String name = item.path("name").asText();
             String imageUrl = "https://community.akamai.steamstatic.com/economy/image/"
                     + item.path("asset_description").path("icon_url").asText();
+            String weaponType = item.path("asset_description").path("type").asText();
 
             Optional<Asset> existing = assetRepository.findByName(name);
-            Asset asset = existing.orElse(Asset.builder()
+            Asset asset = existing.orElseGet(() -> Asset.builder()
                     .name(name)
                     .assetType(Asset.AssetType.CS2_SKIN)
                     .imageUrl(imageUrl)
