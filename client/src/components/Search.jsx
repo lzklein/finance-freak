@@ -5,35 +5,40 @@ import { searchAssets, getSteamPrice } from '../api';
 const Search = () => {
   const [searchParams] = useSearchParams();
   const [results, setResults] = useState([]);
-  const [prices, setPrices] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [expandedCard, setExpandedCard] = useState(null);
+  const [cardPrices, setCardPrices] = useState({});
+  const [priceLoading, setPriceLoading] = useState(false);
   const query = searchParams.get('q');
   const navigate = useNavigate();
+
+  const trimExterior = (name) => {
+  return name.replace(/\s*\([^)]*\)\s*$/, '').trim();
+}
 
   useEffect(() => {
     if (!query) return;
     setPage(0);
-    fetchResults(query, 0);
+    setExpandedCard(null);
   }, [query]);
 
   useEffect(() => {
     if (!query) return;
     fetchResults(query, page);
-  }, [page]);
+  }, [query, page]);
 
   const fetchResults = async (q, p) => {
     setLoading(true);
     setError(null);
-    setPrices({});
+    setExpandedCard(null);
+    setCardPrices({});
     try {
       const data = await searchAssets(q, p);
-      console.log(data);
       setResults(data.results);
       setTotalPages(data.totalPages);
-    //   fetchPrices(data.results);
     } catch (err) {
       setError('Failed to fetch results');
     } finally {
@@ -41,19 +46,29 @@ const Search = () => {
     }
   }
 
-const fetchPrices = async (assets) => {
-    for (const asset of assets) {
+  const handleCardClick = async (asset) => {
+    if (expandedCard === asset.name) {
+      setExpandedCard(null);
+      return;
+    }
+
+    setExpandedCard(asset.name);
+
+    if (!cardPrices[asset.name]) {
+      setPriceLoading(true);
       try {
         const price = await getSteamPrice(asset.name);
-        setPrices(prev => ({ ...prev, [asset.name]: price }));
-        await new Promise(resolve => setTimeout(resolve, 100));
+        setCardPrices(prev => ({ ...prev, [asset.name]: price }));
       } catch (err) {
-        // price unavailable for this item
+        setCardPrices(prev => ({ ...prev, [asset.name]: null }));
+      } finally {
+        setPriceLoading(false);
       }
     }
   }
 
-  const handleAdd = (asset) => {
+  const handleAdd = (e, asset) => {
+    e.stopPropagation();
     console.log('add to watchlist', asset);
   }
 
@@ -62,18 +77,36 @@ const fetchPrices = async (assets) => {
       <h1 className="text-2xl font-bold mb-2">Search Results</h1>
       {query && <p className="text-gray-400 mb-6">Showing results for "{query}"</p>}
 
-      {loading && <p className="text-gray-400">Loading...</p>}
+      {loading && (
+        <div className="flex items-center gap-2 text-gray-400">
+          <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+          Searching...
+        </div>
+      )}
       {error && <p className="text-red-400">{error}</p>}
 
       {!loading && results.length === 0 && query && (
         <p className="text-gray-400">No results found for "{query}"</p>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 items-start">
         {results.map((asset) => {
-          const price = prices[asset.name];
+          const isExpanded = expandedCard === asset.name;
+          const price = cardPrices[asset.name];
+          const exterior = asset.name.match(/\(([^)]+)\)/)?.[1];
+          const isStatTrak = asset.name.toLowerCase().includes('stattrak');
+          const isSouvenir = asset.name.toLowerCase().includes('souvenir');
           return (
-            <div key={asset.name} className="bg-gray-900 rounded-xl overflow-hidden hover:bg-gray-800 transition">
+            <div
+              key={asset.name}
+              onClick={() => handleCardClick(asset)}
+              className={`bg-gray-900 rounded-xl overflow-hidden cursor-pointer border-2 transition-colors duration-200 ${
+                isExpanded
+                  ? 'border-green-500'
+                  : 'border-transparent hover:border-gray-700'
+              }`}
+            >
+              {/* image */}
               <div className="relative">
                 {asset.imageUrl ? (
                   <img
@@ -89,34 +122,99 @@ const fetchPrices = async (assets) => {
                 <span className="absolute top-2 right-2 text-xs px-2 py-1 rounded bg-green-700 text-white">
                   CS2
                 </span>
+                {isStatTrak && (
+                  <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded bg-yellow-600 text-black font-bold">
+                    ST
+                  </span>
+                )}
+                {isSouvenir && (
+                  <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded bg-yellow-400 text-black font-bold">
+                    SV
+                  </span>
+                )}
               </div>
 
+              {/* card body */}
               <div className="p-4">
-                <p className="font-bold text-white text-sm mb-1 truncate">{asset.name}</p>
+                <p className="font-bold text-white text-sm truncate">{trimExterior(asset.name)}</p>
+                {exterior && (
+                  <p className="text-gray-500 text-xs mt-0.5">{exterior}</p>
+                )}
 
-                {/* {price ? (
-                  <p className="text-green-400 text-sm mb-3">
-                    ${price.lowestAsk ? Number(price.lowestAsk).toFixed(2) : 'N/A'}
-                  </p>
-                ) : (
-                  <p className="text-gray-500 text-sm mb-3">Loading price...</p>
-                )} */}
+                {/* expandable section */}
+                <div
+                  style={{
+                    maxHeight: isExpanded ? '400px' : '0px',
+                    overflow: 'hidden',
+                    transition: 'max-height 0.35s ease-in-out, opacity 0.3s ease-in-out',
+                    opacity: isExpanded ? 1 : 0
+                  }}
+                >
+                  <div className="mt-3 border-t border-gray-700 pt-3 flex flex-col gap-2">
 
-                <div className="flex gap-2">
-                  {asset.id && (
-                    <button
-                      onClick={() => navigate(`/asset/${asset.id}`)}
-                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-sm py-1 rounded transition"
-                    >
-                      View
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleAdd(asset)}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm py-1 rounded transition"
-                  >
-                    + Add
-                  </button>
+                    {/* skin metadata */}
+                    {asset.weaponType && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">Type</span>
+                        <span className="text-gray-300">{asset.weaponType}</span>
+                      </div>
+                    )}
+                    {isStatTrak && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">StatTrak™</span>
+                        <span className="text-yellow-400">✓</span>
+                      </div>
+                    )}
+                    {isSouvenir && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">Souvenir</span>
+                        <span className="text-yellow-400">✓</span>
+                      </div>
+                    )}
+                    {/* price */}
+                    {priceLoading && !price ? (
+                      <p className="text-gray-400 text-sm animate-pulse">Fetching price...</p>
+                    ) : price?.lowestAsk ? (
+                      <>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">Lowest Ask</span>
+                          <span className="text-green-400 font-bold">
+                            ${Number(price.lowestAsk).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">Last Sale</span>
+                          <span className="text-white">
+                            ${Number(price.lastSale).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">Volume (24h)</span>
+                          <span className="text-yellow-400">{price.volume}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-gray-500 text-sm">Price unavailable</p>
+                    )}
+
+                    {/* actions */}
+                    <div className="flex gap-2 mt-1">
+                      {asset.id && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate(`/asset/${asset.id}`); }}
+                          className="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-sm py-1.5 rounded transition"
+                        >
+                          View
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => handleAdd(e, asset)}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm py-1.5 rounded transition"
+                      >
+                        + Add
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -124,6 +222,7 @@ const fetchPrices = async (assets) => {
         })}
       </div>
 
+      {/* pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center gap-3 mt-8">
           <button
