@@ -133,3 +133,14 @@ export const getAlertHistory = () =>
   fetch(`${BASE_URL}/alerts/history`, {
     headers: headers()
   }).then(res => res.json());
+
+  export const saveAssetAndAdd = (asset, watchlistId) =>
+  fetch(`${BASE_URL}/watchlists/${watchlistId}/assets/steam`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({
+      name: asset.name,
+      imageUrl: asset.imageUrl,
+      assetType: asset.assetType
+    })
+  }).then(res => res.json());
