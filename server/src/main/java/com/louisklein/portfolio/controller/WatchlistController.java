@@ -1,10 +1,13 @@
 package com.louisklein.portfolio.controller;
 
+import com.louisklein.portfolio.dto.AssetRequest;
 import com.louisklein.portfolio.dto.WatchlistRequest;
 import com.louisklein.portfolio.dto.WatchlistResponse;
+import com.louisklein.portfolio.model.Asset;
 import com.louisklein.portfolio.model.User;
 import com.louisklein.portfolio.model.Watchlist;
 import com.louisklein.portfolio.model.WatchlistAsset;
+import com.louisklein.portfolio.service.AssetService;
 import com.louisklein.portfolio.service.Result;
 import com.louisklein.portfolio.service.UserService;
 import com.louisklein.portfolio.service.WatchlistService;
@@ -25,6 +28,7 @@ public class WatchlistController {
 
     private final WatchlistService watchlistService;
     private final UserService userService;
+    private final AssetService assetService;
 
     @GetMapping
     public ResponseEntity<List<WatchlistResponse>> getWatchlists(
@@ -119,6 +123,35 @@ public class WatchlistController {
         }
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/assets/steam")
+    public ResponseEntity<?> addSteamAsset(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID id,
+            @RequestBody AssetRequest request) {
+
+        User user = userService.findByEmail(userDetails.getUsername());
+
+        // find or create the asset
+        Result<Asset> assetResult = assetService.findOrCreateAsset(
+                request.getName(), request.getAssetType(), request.getImageUrl());
+
+        if (!assetResult.isSuccess()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(assetResult.getMessages());
+        }
+
+        // add to watchlist
+        Result<WatchlistAsset> result = watchlistService.addAsset(
+                id, assetResult.getPayload().getId(), user.getId());
+
+        if (!result.isSuccess()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(result.getMessages());
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     private WatchlistResponse toResponse(Watchlist watchlist) {

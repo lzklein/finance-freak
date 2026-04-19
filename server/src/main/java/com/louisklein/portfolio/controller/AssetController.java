@@ -110,7 +110,7 @@ public class AssetController {
         if (asset.getSkinDetails() != null) {
             response.setWeaponType(asset.getSkinDetails().getWeaponType());
         }
-        
+
         List<PriceCache> prices = priceCacheRepository.findAllByAssetId(asset.getId());
         Map<String, PriceResponse> priceMap = new HashMap<>();
         for (PriceCache pc : prices) {

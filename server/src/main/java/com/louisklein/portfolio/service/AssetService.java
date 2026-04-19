@@ -131,6 +131,25 @@ public class AssetService {
         return Map.of("results", results, "totalCount", totalCount);
     }
 
+    public Result<Asset> findOrCreateAsset(String name, Asset.AssetType assetType, String imageUrl) {
+        Result<Asset> result = new Result<>();
+
+        Optional<Asset> existing = assetRepository.findByName(name.trim());
+        if (existing.isPresent()) {
+            result.setPayload(existing.get());
+            return result;
+        }
+
+        Asset asset = Asset.builder()
+                .name(name.trim())
+                .assetType(assetType)
+                .imageUrl(imageUrl)
+                .build();
+
+        result.setPayload(assetRepository.save(asset));
+        return result;
+    }
+
 //    public List<Asset> searchFromAlpaca(String query) {
 //        List<Asset> results = new ArrayList<>();
 //
