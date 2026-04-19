@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { searchAssets, getSteamPrice } from '../api';
+import WatchlistModal from './WatchlistModal'
 
 const Search = () => {
   const [searchParams] = useSearchParams();
@@ -14,6 +15,7 @@ const Search = () => {
   const [priceLoading, setPriceLoading] = useState(false);
   const query = searchParams.get('q');
   const navigate = useNavigate();
+  const [modalAsset, setModalAsset] = useState(null);
 
   const trimExterior = (name) => {
   return name.replace(/\s*\([^)]*\)\s*$/, '').trim();
@@ -46,6 +48,7 @@ const Search = () => {
     }
   }
 
+  
   const handleCardClick = async (asset) => {
     if (expandedCard === asset.name) {
       setExpandedCard(null);
@@ -69,7 +72,7 @@ const Search = () => {
 
   const handleAdd = (e, asset) => {
     e.stopPropagation();
-    console.log('add to watchlist', asset);
+    setModalAsset(asset);
   }
 
   return (
@@ -244,6 +247,13 @@ const Search = () => {
           </button>
         </div>
       )}
+    {modalAsset && (
+    <WatchlistModal
+        asset={modalAsset}
+        onClose={() => setModalAsset(null)}
+        onSuccess={() => setModalAsset(null)}
+    />
+    )}
     </div>
   )
 }
