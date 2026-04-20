@@ -62,6 +62,7 @@ CREATE TABLE watchlist_assets (
   watchlist_id UUID NOT NULL REFERENCES watchlists(id) ON DELETE CASCADE,
   asset_id UUID NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
   added_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  entry_price NUMERIC(18, 2),
   UNIQUE(watchlist_id, asset_id)
 );
 
