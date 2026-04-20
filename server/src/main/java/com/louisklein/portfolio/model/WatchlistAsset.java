@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -30,6 +31,9 @@ public class WatchlistAsset {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "asset_id", nullable = false)
     private Asset asset;
+
+    @Column(name = "entry_price", precision = 18, scale = 2)
+    private BigDecimal entryPrice;
 
     @CreationTimestamp
     @Column(name = "added_at", nullable = false, updatable = false)

@@ -15,5 +15,6 @@ public class AssetResponse {
     private String imageUrl;
     private String weaponType;
     private Map<String, PriceResponse> prices;
+    private BigDecimal changePct;
     private OffsetDateTime createdAt;
 }

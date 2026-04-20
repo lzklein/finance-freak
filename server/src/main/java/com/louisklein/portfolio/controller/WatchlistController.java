@@ -1,6 +1,7 @@
 package com.louisklein.portfolio.controller;
 
 import com.louisklein.portfolio.dto.AssetRequest;
+import com.louisklein.portfolio.dto.AssetResponse;
 import com.louisklein.portfolio.dto.WatchlistRequest;
 import com.louisklein.portfolio.dto.WatchlistResponse;
 import com.louisklein.portfolio.model.Asset;
@@ -150,6 +151,14 @@ public class WatchlistController {
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @GetMapping("/top-performers")
+    public ResponseEntity<List<AssetResponse>> getTopPerformers(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.findByEmail(userDetails.getUsername());
+        List<AssetResponse> performers = watchlistService.getTopPerformers(user.getId());
+        return ResponseEntity.ok(performers);
     }
 
     private WatchlistResponse toResponse(Watchlist watchlist) {

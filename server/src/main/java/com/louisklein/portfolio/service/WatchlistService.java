@@ -1,19 +1,15 @@
 package com.louisklein.portfolio.service;
 
+import com.louisklein.portfolio.dto.AssetResponse;
+import com.louisklein.portfolio.dto.PriceResponse;
 import com.louisklein.portfolio.exception.ResourceNotFoundException;
-import com.louisklein.portfolio.model.Asset;
-import com.louisklein.portfolio.model.User;
-import com.louisklein.portfolio.model.Watchlist;
-import com.louisklein.portfolio.model.WatchlistAsset;
-import com.louisklein.portfolio.repository.AssetRepository;
-import com.louisklein.portfolio.repository.UserRepository;
-import com.louisklein.portfolio.repository.WatchlistAssetRepository;
-import com.louisklein.portfolio.repository.WatchlistRepository;
+import com.louisklein.portfolio.model.*;
+import com.louisklein.portfolio.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.UUID;
+import java.math.BigDecimal;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +19,7 @@ public class WatchlistService {
     private final WatchlistAssetRepository watchlistAssetRepository;
     private final UserRepository userRepository;
     private final AssetRepository assetRepository;
+    private final PriceCacheRepository priceCacheRepository;
 
     public List<Watchlist> findByUserId(UUID userId) {
         return watchlistRepository.findByUserId(userId);
@@ -128,13 +125,75 @@ public class WatchlistService {
         Asset asset = assetRepository.findById(assetId)
                 .orElseThrow(() -> new ResourceNotFoundException("Asset not found"));
 
+        Optional<PriceCache> priceCache = priceCacheRepository
+                .findByAssetIdAndMarketplace(asset.getId(), PriceCache.Marketplace.STEAM);
+
         WatchlistAsset watchlistAsset = WatchlistAsset.builder()
                 .watchlist(watchlist)
                 .asset(asset)
+                .entryPrice(priceCache.map(PriceCache::getLowestAsk).orElse(null))
                 .build();
 
         result.setPayload(watchlistAssetRepository.save(watchlistAsset));
         return result;
+    }
+
+    public List<AssetResponse> getTopPerformers(UUID userId) {
+        List<Watchlist> watchlists = watchlistRepository.findByUserId(userId);
+
+        return watchlists.stream()
+                .flatMap(w -> watchlistAssetRepository.findByWatchlistId(w.getId()).stream())
+                .filter(wa -> wa.getEntryPrice() != null)
+                .filter(wa -> {
+                    Optional<PriceCache> pc = priceCacheRepository
+                            .findByAssetIdAndMarketplace(wa.getAsset().getId(), PriceCache.Marketplace.STEAM);
+                    return pc.isPresent() && pc.get().getLowestAsk() != null;
+                })
+                .sorted((a, b) -> {
+                    BigDecimal aChange = getPriceChangePct(a);
+                    BigDecimal bChange = getPriceChangePct(b);
+                    return bChange.compareTo(aChange);
+                })
+                .limit(5)
+                .map(wa -> {
+                    Asset asset = wa.getAsset();
+                    AssetResponse response = new AssetResponse();
+                    response.setId(asset.getId());
+                    response.setName(asset.getName());
+                    response.setAssetType(asset.getAssetType());
+                    response.setImageUrl(asset.getImageUrl());
+
+                    priceCacheRepository.findByAssetIdAndMarketplace(
+                                    asset.getId(), PriceCache.Marketplace.STEAM)
+                            .ifPresent(pc -> {
+                                Map<String, PriceResponse> prices = new HashMap<>();
+                                PriceResponse pr = new PriceResponse();
+                                pr.setLowestAsk(pc.getLowestAsk());
+                                pr.setLastSale(pc.getLastSale());
+                                pr.setVolume24h(pc.getVolume24h());
+                                pr.setFetchedAt(pc.getFetchedAt());
+                                prices.put("STEAM", pr);
+                                response.setPrices(prices);
+                            });
+
+                    BigDecimal changePct = getPriceChangePct(wa);
+                    response.setChangePct(changePct);
+                    return response;
+                })
+                .toList();
+    }
+
+    private BigDecimal getPriceChangePct(WatchlistAsset wa) {
+        Optional<PriceCache> pc = priceCacheRepository
+                .findByAssetIdAndMarketplace(wa.getAsset().getId(), PriceCache.Marketplace.STEAM);
+        if (pc.isEmpty() || pc.get().getLowestAsk() == null || wa.getEntryPrice() == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal current = pc.get().getLowestAsk();
+        BigDecimal entry = wa.getEntryPrice();
+        return current.subtract(entry)
+                .divide(entry, 4, java.math.RoundingMode.HALF_UP)
+                .multiply(new BigDecimal("100"));
     }
 
     public Result<Void> removeAsset(UUID watchlistId, UUID assetId, UUID userId) {
@@ -156,6 +215,8 @@ public class WatchlistService {
         watchlistAssetRepository.deleteByWatchlistIdAndAssetId(watchlistId, assetId);
         return result;
     }
+
+
 
     public List<WatchlistAsset> getAssets(UUID watchlistId) {
         return watchlistAssetRepository.findByWatchlistId(watchlistId);
