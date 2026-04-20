@@ -110,4 +110,8 @@ public class PricePollerService {
             }
         }
     }
+
+    public void pollNow() {
+        pollPrices();
+    }
 }
