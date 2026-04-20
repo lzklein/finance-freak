@@ -64,4 +64,24 @@ public class SteamMarketClient {
                 .bodyToMono(JsonNode.class)
                 .block();
     }
+
+    public JsonNode getPriceHistory(String marketHashName) {
+        try {
+            return webClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/market/pricehistory/")
+                            .queryParam("appid", "730")
+                            .queryParam("market_hash_name", marketHashName)
+                            .build())
+                    .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                            response -> response.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException("Steam error: " + response.statusCode())))
+                    .bodyToMono(JsonNode.class)
+                    .block();
+        } catch (Exception e) {
+//            log.warn("Price history fetch failed for {}: {}", marketHashName, e.getMessage());
+            return null;
+        }
+    }
 }

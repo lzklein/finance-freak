@@ -152,3 +152,13 @@ export const getTopPerformers = () =>
   fetch(`${BASE_URL}/watchlists/top-performers`, {
     headers: headers()
   }).then(res => res.json());
+
+export const getPopularAssets = () =>
+  fetch(`${BASE_URL}/assets/popular`, {
+    headers: headers()
+  }).then(res => res.json());
+
+export const getWatchlistAssets = (watchlistId) =>
+  fetch(`${BASE_URL}/watchlists/${watchlistId}/assets`, {
+    headers: headers()
+  }).then(res => res.json());
