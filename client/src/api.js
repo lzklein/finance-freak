@@ -147,3 +147,8 @@ export const saveAssetAndAdd = (asset, watchlistId) =>
     const text = await res.text();
     return text ? JSON.parse(text) : {};
   });
+
+export const getTopPerformers = () =>
+  fetch(`${BASE_URL}/watchlists/top-performers`, {
+    headers: headers()
+  }).then(res => res.json());
