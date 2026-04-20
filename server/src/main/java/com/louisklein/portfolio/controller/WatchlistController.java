@@ -133,7 +133,6 @@ public class WatchlistController {
 
         User user = userService.findByEmail(userDetails.getUsername());
 
-        // find or create the asset
         Result<Asset> assetResult = assetService.findOrCreateAsset(
                 request.getName(), request.getAssetType(), request.getImageUrl());
 
@@ -142,7 +141,6 @@ public class WatchlistController {
                     .body(assetResult.getMessages());
         }
 
-        // add to watchlist
         Result<WatchlistAsset> result = watchlistService.addAsset(
                 id, assetResult.getPayload().getId(), user.getId());
 
