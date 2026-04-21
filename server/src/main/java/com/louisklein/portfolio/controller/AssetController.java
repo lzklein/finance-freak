@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.*;
 
 @RestController
@@ -169,5 +170,34 @@ public class AssetController {
         } catch (Exception e) {
             return ResponseEntity.ok(Map.of("lowestAsk", (Object) null, "lastSale", (Object) null, "volume", (Object) null));
         }
+    }
+
+    @GetMapping("/popular")
+    public ResponseEntity<List<AssetResponse>> getPopular() {
+        List<Asset> assets = assetService.findByAssetType(Asset.AssetType.CS2_SKIN);
+        List<Asset> popular = assets.stream()
+                .filter(a -> priceCacheRepository.findByAssetIdAndMarketplace(
+                        a.getId(), PriceCache.Marketplace.STEAM).isPresent())
+                .limit(10)
+                .toList();
+        return ResponseEntity.ok(popular.stream().map(this::toResponse).toList());
+    }
+
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<Map<String, Object>>> getPriceHistory(@PathVariable UUID id) {
+        List<PriceCache> history = priceCacheRepository.findAllByAssetId(id);
+
+        List<Map<String, Object>> chartData = history.stream()
+                .filter(pc -> pc.getLowestAsk() != null)
+                .sorted(Comparator.comparing(PriceCache::getFetchedAt))
+                .map(pc -> {
+                    Map<String, Object> point = new HashMap<>();
+                    point.put("time", pc.getFetchedAt().toEpochSecond());
+                    point.put("value", pc.getLowestAsk());
+                    return point;
+                })
+                .toList();
+
+        return ResponseEntity.ok(chartData);
     }
 }
