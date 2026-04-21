@@ -1,13 +1,8 @@
 package com.louisklein.portfolio.controller;
 
-import com.louisklein.portfolio.dto.AssetRequest;
-import com.louisklein.portfolio.dto.AssetResponse;
-import com.louisklein.portfolio.dto.WatchlistRequest;
-import com.louisklein.portfolio.dto.WatchlistResponse;
-import com.louisklein.portfolio.model.Asset;
-import com.louisklein.portfolio.model.User;
-import com.louisklein.portfolio.model.Watchlist;
-import com.louisklein.portfolio.model.WatchlistAsset;
+import com.louisklein.portfolio.dto.*;
+import com.louisklein.portfolio.model.*;
+import com.louisklein.portfolio.repository.PriceCacheRepository;
 import com.louisklein.portfolio.service.AssetService;
 import com.louisklein.portfolio.service.Result;
 import com.louisklein.portfolio.service.UserService;
@@ -19,7 +14,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -30,7 +27,7 @@ public class WatchlistController {
     private final WatchlistService watchlistService;
     private final UserService userService;
     private final AssetService assetService;
-
+    private final PriceCacheRepository priceCacheRepository;
     @GetMapping
     public ResponseEntity<List<WatchlistResponse>> getWatchlists(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -167,5 +164,33 @@ public class WatchlistController {
         response.setName(watchlist.getName());
         response.setCreatedAt(watchlist.getCreatedAt());
         return response;
+    }
+
+    @GetMapping("/{id}/assets")
+    public ResponseEntity<List<AssetResponse>> getWatchlistAssets(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID id) {
+        List<WatchlistAsset> assets = watchlistService.getAssets(id);
+        return ResponseEntity.ok(assets.stream().map(wa -> {
+            AssetResponse response = new AssetResponse();
+            response.setId(wa.getAsset().getId());
+            response.setName(wa.getAsset().getName());
+            response.setAssetType(wa.getAsset().getAssetType());
+            response.setImageUrl(wa.getAsset().getImageUrl());
+
+            List<PriceCache> prices = priceCacheRepository.findAllByAssetId(wa.getAsset().getId());
+            Map<String, PriceResponse> priceMap = new HashMap<>();
+            for (PriceCache pc : prices) {
+                PriceResponse pr = new PriceResponse();
+                pr.setLowestAsk(pc.getLowestAsk());
+                pr.setHighestBid(pc.getHighestBid());
+                pr.setLastSale(pc.getLastSale());
+                pr.setVolume24h(pc.getVolume24h());
+                pr.setFetchedAt(pc.getFetchedAt());
+                priceMap.put(pc.getMarketplace().name(), pr);
+            }
+            response.setPrices(priceMap);
+            return response;
+        }).toList());
     }
 }
