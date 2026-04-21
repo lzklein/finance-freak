@@ -1,12 +1,14 @@
 package com.louisklein.portfolio.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.math.BigDecimal;
 
+@Slf4j
 @Component
 public class SteamMarketClient {
 
@@ -80,7 +82,7 @@ public class SteamMarketClient {
                     .bodyToMono(JsonNode.class)
                     .block();
         } catch (Exception e) {
-//            log.warn("Price history fetch failed for {}: {}", marketHashName, e.getMessage());
+            log.warn("Price history fetch failed for {}: {}", marketHashName, e.getMessage());
             return null;
         }
     }

@@ -31,8 +31,6 @@ const Register = () => {
 
     try {
       const response = await registerUser(registerSubmission);
-      console.log(response);
-
       if (response.token) {
         navigate('/confirmation');
       } else {
