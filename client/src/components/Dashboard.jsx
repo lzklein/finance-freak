@@ -27,14 +27,16 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-8">
-      <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-      <button 
-        onClick={testFetch}
-        className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">
-        Test Alpaca Fetch
-      </button>
-      {data && <pre className="mt-4 text-xs text-gray-400">{JSON.stringify(data, null, 2)}</pre>}
+    <div className="min-h-screen bg-gray-950 text-white">
+      <Popular />
+      <div className="flex gap-6 p-6">
+        <div className="flex-1">
+          <Watchlist />
+        </div>
+        <div className="w-72 flex-shrink-0">
+          <Top />
+        </div>
+      </div>
     </div>
   )
 }
