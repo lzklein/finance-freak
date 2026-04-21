@@ -162,3 +162,13 @@ export const getWatchlistAssets = (watchlistId) =>
   fetch(`${BASE_URL}/watchlists/${watchlistId}/assets`, {
     headers: headers()
   }).then(res => res.json());
+
+  export const getAssetById = (id) =>
+  fetch(`${BASE_URL}/assets/${id}`, {
+    headers: headers()
+  }).then(res => res.json());
+
+export const getAssetPriceHistory = (id) =>
+  fetch(`${BASE_URL}/assets/${id}/history`, {
+    headers: headers()
+  }).then(res => res.json());
