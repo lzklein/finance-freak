@@ -13,6 +13,7 @@ import Dashboard from './components/Dashboard';
 import Confirmation from './components/Confirmation';
 import Login from './components/Login';
 import Search from './components/Search';
+import AssetPage from './components/AssetPage'
 
 function App() {
   return (
@@ -20,13 +21,14 @@ function App() {
       <div className="App">
         <Header/>
           <Routes>
-            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/search" element={<Search />} />
             <Route path="/register" element={<Register />} />
             <Route path="/confirmation" element={<Confirmation />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/inbox" element={<Inbox />} />
+            <Route path="/asset/:id" element={<AssetPage />} />
+            <Route path="/" element={<Home />} />
           </Routes>
         <Footer/>
       </div>
