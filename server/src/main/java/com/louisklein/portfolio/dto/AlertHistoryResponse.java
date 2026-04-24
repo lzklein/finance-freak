@@ -9,6 +9,7 @@ import java.util.UUID;
 public class AlertHistoryResponse {
     private UUID id;
     private UUID alertId;
+    private UUID assetId;
     private String assetName;
     private BigDecimal triggeredPrice;
     private OffsetDateTime triggeredAt;

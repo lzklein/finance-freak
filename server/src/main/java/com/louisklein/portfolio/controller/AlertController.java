@@ -140,6 +140,7 @@ public class AlertController {
         AlertHistoryResponse response = new AlertHistoryResponse();
         response.setId(history.getId());
         response.setAlertId(history.getAlert().getId());
+        response.setAssetId(history.getAlert().getAsset().getId());
         response.setAssetName(history.getAlert().getAsset().getName());
         response.setTriggeredPrice(history.getTriggeredPrice());
         response.setTriggeredAt(history.getTriggeredAt());
