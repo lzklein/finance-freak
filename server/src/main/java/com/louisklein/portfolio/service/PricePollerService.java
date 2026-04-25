@@ -28,7 +28,7 @@ public class PricePollerService {
     private final AlertService alertService;
     private final SteamMarketClient steamMarketClient;
 
-    @Scheduled(fixedRate = 300000)
+    @Scheduled(fixedRate = 60000)
     public void pollPrices() {
         log.info("Starting price poll...");
 
@@ -37,6 +37,10 @@ public class PricePollerService {
         for (Asset asset : cs2Assets) {
             try {
                 pollSteamPrice(asset);
+                Thread.sleep(1500); // 1.5 seconds between each request
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
             } catch (Exception e) {
                 log.error("Failed to poll price for {}: {}", asset.getName(), e.getMessage());
             }
